@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"io"
+	"os"
+	"testing"
+)
 
 func Test_isPrime(t *testing.T) {
 	primeTests := []struct {
@@ -49,5 +53,32 @@ func Test_isPrime2(t *testing.T) {
 
 	if msg != "7 is a prime number!" {
 		t.Error("wrong message returned:", msg)
+	}
+}
+
+func Test_prompt(t *testing.T) {
+	// save a copy of os.Stdout
+	oldOut := os.Stdout
+
+	// create a read and write pipe
+	r, w, _ := os.Pipe()
+
+	// set os.Stdout to our write pipe
+	os.Stdout = w
+
+	prompt()
+
+	// close our writer
+	_ = w.Close()
+
+	// reset os.Stdout to what it was before
+	os.Stdout = oldOut
+
+	// read the output of our prompt() func from our read pipe
+	out, _ := io.ReadAll(r)
+
+	// perform our test
+	if string(out) != "-> " {
+		t.Errorf("incorrect propt: expected -> but got %s", string(out))
 	}
 }
