@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -54,6 +56,50 @@ func TestAppHome(t *testing.T) {
 	// check status code
 	if rr.Code != http.StatusOK {
 		t.Errorf("TestAppHome returned wrong status code; expected 200 but got %d", rr.Code)
+	}
+
+	body, _ := io.ReadAll(rr.Body)
+	if !strings.Contains(string(body), `<small>From Session:`) {
+		t.Error("did not find correct text in html.")
+	}
+}
+
+func TestAppHome2(t *testing.T) {
+	var tests = []struct {
+		name         string
+		putInSession string
+		expectedHTML string
+	}{
+		{"first visit", "", "<small>From Session:"},
+		{"second visit", "hello, world!", "<small>From Session: hello, world!"},
+	}
+
+	for _, e := range tests {
+		// create a request
+		req, _ := http.NewRequest("GET", "/", nil)
+
+		req = addContextAndSessionToRequest(req, app)
+		_ = app.Session.Destroy(req.Context())
+
+		if e.putInSession != "" {
+			app.Session.Put(req.Context(), "test", e.putInSession)
+		}
+
+		rr := httptest.NewRecorder()
+
+		handler := http.HandlerFunc(app.Home)
+
+		handler.ServeHTTP(rr, req)
+
+		// check status code
+		if rr.Code != http.StatusOK {
+			t.Errorf("TestAppHome returned wrong status code; expected 200 but got %d", rr.Code)
+		}
+
+		body, _ := io.ReadAll(rr.Body)
+		if !strings.Contains(string(body), e.expectedHTML) {
+			t.Errorf("%s: did not find %s in response body", e.name, e.expectedHTML)
+		}
 	}
 }
 
