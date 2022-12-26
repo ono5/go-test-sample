@@ -10,3 +10,10 @@ go get github.com/go-chi/chi/v5/middleware
 go get github.com/alexedwards/scs/v2
 go get github.com/jackc/pgx/v4
 ```
+
+## User & Password
+
+```
+admin@example.com
+secret
+```
