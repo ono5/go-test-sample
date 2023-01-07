@@ -23,3 +23,14 @@ secret
 
 [GitHub](https://github.com/ory/dockertest)
 
+## go:build コメント
+`go:build` コメントを書くとテスト時に以下のように指定してテストのインテグレーションが行えるようになる。
+
+```users_postgres.go
+# //とgoの間に隙間は書けない
+//go:build integration
+```
+
+```
+$ go test -v -tags=integration ./...
+```
