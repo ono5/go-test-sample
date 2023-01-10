@@ -1,7 +1,10 @@
-.PHONY: run test cover report ts
+.PHONY: run test cover report ts api
 
 run:
 	go run ./cmd/web/
+
+api:
+	go run ./cmd/api/
 
 test:
 	# go test -v ./...
