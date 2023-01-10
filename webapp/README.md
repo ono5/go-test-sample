@@ -34,3 +34,10 @@ secret
 ```
 $ go test -v -tags=integration ./...
 ```
+
+## API Curl
+
+```
+$ curl http://localhost:8090/test
+{"message":"hello, world"}
+```

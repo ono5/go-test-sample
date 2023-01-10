@@ -1,4 +1,4 @@
-.PHONY: run test cover report ts api
+.PHONY: run test cover report ts api curl
 
 run:
 	go run ./cmd/web/
@@ -21,3 +21,6 @@ ts:
 	# make ts t=Test_isPrime
 	# go test -v -run Test_alpha
 	go test -v -run ${t} ./...
+
+curl:
+	curl http://localhost:8090/test
