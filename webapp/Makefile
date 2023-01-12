@@ -1,4 +1,4 @@
-.PHONY: run test cover report ts api curl
+.PHONY: run test cover report ts api curl auth api-test
 
 run:
 	go run ./cmd/web/
@@ -24,3 +24,9 @@ ts:
 
 curl:
 	curl http://localhost:8090/test
+
+auth:
+	curl http://localhost:8090/auth -X POST -H "Content-Type: application/json" -d '{"email": "admin@example.com", "password": "secret"}'
+
+api-test:
+	cd cmd/api && go test -v .
