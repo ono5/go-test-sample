@@ -1,4 +1,4 @@
-.PHONY: run test cover report ts api curl auth api-test
+.PHONY: run test cover report ts api curl auth api-test cli
 
 run:
 	go run ./cmd/web/
@@ -30,3 +30,6 @@ auth:
 
 api-test:
 	cd cmd/api && go test -v .
+
+cli:
+	go run ./cmd/cli/ -action=expired
