@@ -14,8 +14,9 @@ import (
 var jwtTokenExpiry = time.Minute * 15
 var refreshTokenExpiry = time.Hour * 24
 
+
 type TokenPairs struct {
-	Token        string `json:"access_token"`
+	Token string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
@@ -27,7 +28,7 @@ type Claims struct {
 func (app *application) getTokenFromHeaderAndVerify(w http.ResponseWriter, r *http.Request) (string, *Claims, error) {
 	// we expect our authorization header to look like this:
 	// Bearer <token>
-	// add a header
+	// add a header 
 	w.Header().Add("Vary", "Authorization")
 
 	// get the authorization header
@@ -51,19 +52,19 @@ func (app *application) getTokenFromHeaderAndVerify(w http.ResponseWriter, r *ht
 
 	token := headerParts[1]
 
-	// declear an empty Claims variable
+	// declare an empty Claims variable
 	claims := &Claims{}
 
 	// parse the token with our claims (we read into claims), using our secret (from the receiver)
-	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error){
 		// validate the signing algorithm
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexepected signing method: %v", token.Header["alg"])
 		}
 		return []byte(app.JWTSecret), nil
 	})
 
-	// check for an error; note that this catches expired token as well.
+	// check for an error; note that this catches expired tokens as well.
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "token is expired by") {
 			return "", nil, errors.New("expired token")
@@ -81,7 +82,7 @@ func (app *application) getTokenFromHeaderAndVerify(w http.ResponseWriter, r *ht
 }
 
 func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) {
-	// Create the token
+	// Create the token.
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	// set claims
@@ -109,8 +110,8 @@ func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) {
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 	refreshTokenClaims := refreshToken.Claims.(jwt.MapClaims)
 	refreshTokenClaims["sub"] = fmt.Sprint(user.ID)
-
-	// set expiry; musst be longer than jwt expiry
+	
+	// set expiry; must be longer than jwt expiry
 	refreshTokenClaims["exp"] = time.Now().Add(refreshTokenExpiry).Unix()
 
 	// create signed refresh token
@@ -119,10 +120,11 @@ func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) {
 		return TokenPairs{}, err
 	}
 
-	var toeknPairs = TokenPairs{
-		Token:        signedAccessToken,
+	var tokenPairs = TokenPairs{
+		Token: signedAccessToken,
 		RefreshToken: signedRefreshToken,
 	}
 
-	return toeknPairs, nil
+
+	return tokenPairs, nil
 }

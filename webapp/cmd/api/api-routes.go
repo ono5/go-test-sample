@@ -12,10 +12,15 @@ func (app *application) routes() http.Handler {
 
 	// register middleware
 	mux.Use(middleware.Recoverer)
-
-	// mux.Use(app.enableCORS)
+	mux.Use(app.enableCORS)
 
 	mux.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("./html/"))))
+
+	mux.Route("/web", func(mux chi.Router) {
+		mux.Post("/auth", app.authenticate)
+		mux.Get("/refresh-token", app.refreshUsingCookie)
+		mux.Get("/logout", app.deleteRefreshCookie)
+	})
 
 	// authentication routes - auth handler, refresh
 	mux.Post("/auth", app.authenticate)
@@ -31,6 +36,7 @@ func (app *application) routes() http.Handler {
 		mux.Put("/", app.insertUser)
 		mux.Patch("/", app.updateUser)
 	})
+
 
 	return mux
 }

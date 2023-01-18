@@ -9,12 +9,12 @@ import (
 )
 
 func Test_app_enableCORS(t *testing.T) {
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){})
 
-	var tests = []struct {
-		name           string
-		method         string
-		expectedHeader bool
+	var tests = []struct{
+		name string
+		method string
+		expectHeader bool
 	}{
 		{"preflight", "OPTIONS", true},
 		{"get", "GET", false},
@@ -28,37 +28,37 @@ func Test_app_enableCORS(t *testing.T) {
 
 		handlerToTest.ServeHTTP(rr, req)
 
-		if e.expectedHeader && rr.HeaderMap.Get("Access-Control-Allow-Credentials") == "" {
+		if e.expectHeader && rr.Header().Get("Access-Control-Allow-Credentials") == "" {
 			t.Errorf("%s: expected header, but did not find it", e.name)
 		}
 
-		if !e.expectedHeader && rr.Header().Get("Access-Control-Allow-Credentials") != "" {
+		if !e.expectHeader && rr.Header().Get("Access-Control-Allow-Credentials") != "" {
 			t.Errorf("%s: expected no header, but got one", e.name)
 		}
 	}
 }
 
 func Test_app_authRequired(t *testing.T) {
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){})
 
 	testUser := data.User{
-		ID:        1,
+		ID: 1,
 		FirstName: "Admin",
-		LastName:  "User",
-		Email:     "admin@example.com",
+		LastName: "User",
+		Email: "admin@example.com",
 	}
 
 	tokens, _ := app.generateTokenPair(&testUser)
 
-	var tests = []struct {
-		name            string
-		token           string
-		expectAutorized bool
-		setHeader       bool
+	var tests = []struct{
+		name string
+		token string
+		expectAuthorized bool
+		setHeader bool
 	}{
-		{name: "valid token", token: fmt.Sprintf("Bearer %s", tokens.Token), expectAutorized: true, setHeader: true},
-		{name: "no token", token: "", expectAutorized: false, setHeader: false},
-		{name: "invalid token", token: fmt.Sprintf("Bearer %s", expiredToken), expectAutorized: false, setHeader: true},
+		{name: "valid token", token: fmt.Sprintf("Bearer %s", tokens.Token), expectAuthorized: true, setHeader: true},
+		{name: "no token", token: "", expectAuthorized: false, setHeader: false},
+		{name: "invalid token", token: fmt.Sprintf("Bearer %s", expiredToken), expectAuthorized: false, setHeader: true},
 	}
 
 	for _, e := range tests {
@@ -71,11 +71,11 @@ func Test_app_authRequired(t *testing.T) {
 		handlerToTest := app.authRequired(nextHandler)
 		handlerToTest.ServeHTTP(rr, req)
 
-		if e.expectAutorized && rr.Code == http.StatusUnauthorized {
+		if e.expectAuthorized && rr.Code == http.StatusUnauthorized {
 			t.Errorf("%s: got code 401, and should not have", e.name)
 		}
 
-		if !e.expectAutorized && rr.Code != http.StatusUnauthorized {
+		if !e.expectAuthorized && rr.Code != http.StatusUnauthorized {
 			t.Errorf("%s: did not get code 401, and should have", e.name)
 		}
 	}

@@ -9,8 +9,8 @@ import (
 )
 
 func Test_app_routes(t *testing.T) {
-	var registered = []struct {
-		route  string
+	var registered = []struct{
+		route string
 		method string
 	}{
 		{"/auth", "POST"},
@@ -20,6 +20,7 @@ func Test_app_routes(t *testing.T) {
 		{"/users/{userID}", "DELETE"},
 		{"/users/", "PATCH"},
 		{"/users/", "PUT"},
+		
 	}
 
 	mux := app.routes()
@@ -27,7 +28,7 @@ func Test_app_routes(t *testing.T) {
 	chiRoutes := mux.(chi.Routes)
 
 	for _, route := range registered {
-		// check to see if the route exits
+		// check to see if the route exists
 		if !routeExists(route.route, route.method, chiRoutes) {
 			t.Errorf("route %s is not registered", route.route)
 		}

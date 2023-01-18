@@ -20,12 +20,12 @@ func Test_app_authenticate(t *testing.T) {
 		requestBody        string
 		expectedStatusCode int
 	}{
-		{"valid user", `{"email": "admin@example.com", "password": "secret"}`, http.StatusOK},
+		{"valid user", `{"email":"admin@example.com","password":"secret"}`, http.StatusOK},
 		{"not json", `I'm not JSON`, http.StatusUnauthorized},
 		{"empty json", `{}`, http.StatusUnauthorized},
-		{"empty email", `{"email": ""}`, http.StatusUnauthorized},
-		{"empty password", `{"email": "admin@example.com"}`, http.StatusUnauthorized},
-		{"invalid user", `{"email": "admin@someotherdomain.com", "password": "secret"}`, http.StatusUnauthorized},
+		{"empty email", `{"email":""}`, http.StatusUnauthorized},
+		{"empty password", `{"email":"admin@example.com"}`, http.StatusUnauthorized},
+		{"invalid user", `{"email":"admin@someotherdomain.com","password":"secret"}`, http.StatusUnauthorized},
 	}
 
 	for _, e := range theTests {
@@ -93,6 +93,7 @@ func Test_app_refresh(t *testing.T) {
 
 		refreshTokenExpiry = oldRefreshTime
 	}
+
 }
 
 func Test_app_userHandlers(t *testing.T) {
@@ -105,15 +106,15 @@ func Test_app_userHandlers(t *testing.T) {
 		expectedStatus int
 	}{
 		{"allUsers", "GET", "", "", app.allUsers, http.StatusOK},
-		{"deleteUsers", "DELETE", "", "1", app.deleteUser, http.StatusNoContent},
-		{"deleteUsers bad URL param", "DELETE", "", "Y", app.deleteUser, http.StatusBadRequest},
+		{"deleteUser", "DELETE", "", "1", app.deleteUser, http.StatusNoContent},
+		{"deleteUser bad URL param", "DELETE", "", "Y", app.deleteUser, http.StatusBadRequest},
 		{"getUser valid", "GET", "", "1", app.getUser, http.StatusOK},
 		{"getUser invalid", "GET", "", "100", app.getUser, http.StatusBadRequest},
 		{"getUser bad URL param", "GET", "", "Y", app.getUser, http.StatusBadRequest},
 		{
 			"updateUser valid",
 			"PATCH",
-			`{"id": 1, "first_name": "Administrator", "last_name": "User", "email": "admin@example.com"}`,
+			`{"id":1,"first_name":"Administrator","last_name":"User","email":"admin@example.com"}`,
 			"",
 			app.updateUser,
 			http.StatusNoContent,
@@ -121,7 +122,7 @@ func Test_app_userHandlers(t *testing.T) {
 		{
 			"updateUser invalid",
 			"PATCH",
-			`{"id": 100, "first_name": "Administrator", "last_name": "User", "email": "admin@example.com"}`,
+			`{"id":100,"first_name":"Administrator","last_name":"User","email":"admin@example.com"}`,
 			"",
 			app.updateUser,
 			http.StatusBadRequest,
@@ -129,15 +130,15 @@ func Test_app_userHandlers(t *testing.T) {
 		{
 			"updateUser invalid json",
 			"PATCH",
-			`{"id": 1, first_name: "Administrator", "last_name": "User", "email": "admin@example.com"}`,
+			`{"id":1,first_name:"Administrator","last_name":"User","email":"admin@example.com"}`,
 			"",
 			app.updateUser,
 			http.StatusBadRequest,
 		},
 		{
-			"insertUser invalid",
+			"insertUser valid",
 			"PUT",
-			`{"first_name": "Jack", "last_name": "Smith", "email": "jack@example.com"}`,
+			`{"first_name":"Jack","last_name":"Smith","email":"jack@example.com"}`,
 			"",
 			app.insertUser,
 			http.StatusNoContent,
@@ -145,17 +146,17 @@ func Test_app_userHandlers(t *testing.T) {
 		{
 			"insertUser invalid",
 			"PUT",
-			`{"foo": "bar", "first_name": "Jack", "last_name": "User", "email": "admin@example.com"}`,
+			`{"foo":"bar","first_name":"Jack","last_name":"Smith","email":"jack@example.com"}`,
 			"",
-			app.updateUser,
+			app.insertUser,
 			http.StatusBadRequest,
 		},
 		{
 			"insertUser invalid json",
 			"PUT",
-			`{first_name: "Jack", "last_name": "Smith", "email": "jack@example.com"}`,
+			`{first_name:"Jack","last_name":"Smith","email":"jack@example.com"}`,
 			"",
-			app.updateUser,
+			app.insertUser,
 			http.StatusBadRequest,
 		},
 	}
@@ -181,5 +182,92 @@ func Test_app_userHandlers(t *testing.T) {
 		if rr.Code != e.expectedStatus {
 			t.Errorf("%s: wrong status returned; expected %d but got %d", e.name, e.expectedStatus, rr.Code)
 		}
+	}
+}
+
+func Test_app_refreshUsingCookie(t *testing.T) {
+	testUser := data.User{
+		ID:        1,
+		FirstName: "Admin",
+		LastName:  "User",
+		Email:     "admin@example.com",
+	}
+
+	tokens, _ := app.generateTokenPair(&testUser)
+
+	testCookie := &http.Cookie{
+		Name:     "__Host-refresh_token",
+		Path:     "/",
+		Value:    tokens.RefreshToken,
+		Expires:  time.Now().Add(refreshTokenExpiry),
+		MaxAge:   int(refreshTokenExpiry.Seconds()),
+		SameSite: http.SameSiteStrictMode,
+		Domain:   "localhost",
+		HttpOnly: true,
+		Secure:   true,
+	}
+
+	badCookie := &http.Cookie{
+		Name:     "__Host-refresh_token",
+		Path:     "/",
+		Value:    "somebadstring",
+		Expires:  time.Now().Add(refreshTokenExpiry),
+		MaxAge:   int(refreshTokenExpiry.Seconds()),
+		SameSite: http.SameSiteStrictMode,
+		Domain:   "localhost",
+		HttpOnly: true,
+		Secure:   true,
+	}
+
+	var tests = []struct {
+		name           string
+		addCookie      bool
+		cookie         *http.Cookie
+		expectedStatus int
+	}{
+		{"valid cookie", true, testCookie, http.StatusOK},
+		{"invalid cookie", true, badCookie, http.StatusBadRequest},
+		{"no cookie", false, nil, http.StatusUnauthorized},
+	}
+
+	for _, e := range tests {
+		rr := httptest.NewRecorder()
+
+		req, _ := http.NewRequest("GET", "/", nil)
+		if e.addCookie {
+			req.AddCookie(e.cookie)
+		}
+
+		handler := http.HandlerFunc(app.refreshUsingCookie)
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != e.expectedStatus {
+			t.Errorf("%s: wrong status code returned; expected %d but got %d", e.name, e.expectedStatus, rr.Code)
+		}
+	}
+}
+
+func Test_app_deleteRefreshCookie(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/logout", nil)
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(app.deleteRefreshCookie)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusAccepted {
+		t.Errorf("wrong status; expected %d but got %d", http.StatusAccepted, rr.Code)
+	}
+
+	foundCookie := false
+	for _, c := range rr.Result().Cookies() {
+		if c.Name == "__Host-refresh_token" {
+			foundCookie = true
+			if c.Expires.After(time.Now()) {
+				t.Errorf("cookie expiration in future, and should not be: %v", c.Expires.UTC())
+			}
+		}
+	}
+
+	if !foundCookie {
+		t.Error("__Host-refresh_token cookie not found")
 	}
 }
