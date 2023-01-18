@@ -15,6 +15,8 @@ func (app *application) routes() http.Handler {
 
 	// mux.Use(app.enableCORS)
 
+	mux.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("./html/"))))
+
 	// authentication routes - auth handler, refresh
 	mux.Post("/auth", app.authenticate)
 	mux.Post("/refresh-token", app.refresh)
