@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -61,5 +62,33 @@ func Test_prompt(t *testing.T) {
 	// perform our test
 	if string(out) != "-> " {
 		t.Errorf("incorrect propmt: expted -> but got %s", string(out))
+	}
+}
+
+func Test_intro(t *testing.T) {
+	// save a copy of os.Stdout
+	oldOut := os.Stdout
+
+	// create a read and write pipe
+	r, w, _ := os.Pipe()
+
+	// set os.Stdout ot our wwrite pipe
+	os.Stdout = w
+
+	// get prompt
+	intro()
+
+	// close our writer
+	_ = w.Close()
+
+	// reset os.Stdout of what it was before
+	os.Stdout = oldOut
+
+	// read the output of our prompt() func from our read pipe
+	out, _ := io.ReadAll(r)
+
+	// perform our test
+	if !strings.Contains(string(out), "Enter a whole number") {
+		t.Errorf("intro text but got %s", string(out))
 	}
 }
