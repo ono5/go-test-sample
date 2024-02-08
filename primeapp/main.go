@@ -29,6 +29,7 @@ func main() {
 }
 
 func readUserInput(doneChan chan bool) {
+	// get user input
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
