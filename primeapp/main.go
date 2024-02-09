@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -16,7 +17,7 @@ func main() {
 	doneChan := make(chan bool)
 
 	// start a goroutine to read user input and run program
-	go readUserInput(doneChan)
+	go readUserInput(os.Stdin, doneChan)
 
 	// block until the doneChan gets a value
 	<-doneChan
@@ -28,9 +29,9 @@ func main() {
 	fmt.Println("Goodbye.")
 }
 
-func readUserInput(doneChan chan bool) {
+func readUserInput(in io.Reader, doneChan chan bool) {
 	// get user input
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(in)
 
 	for {
 		res, done := checkNumbers(scanner)
