@@ -65,11 +65,11 @@ func TestForm_ErrorGet(t *testing.T) {
 	s := form.Errors.Get("password")
 
 	if len(s) == 0 {
-		t.Error("should have an error returend from Get, but do not")
+		t.Error("should have an error returned from Get, but do not")
 	}
 
 	s = form.Errors.Get("whatever")
 	if len(s) != 0 {
-		t.Error("should not have an error, but got 0")
+		t.Error("should not have an error, but got one")
 	}
 }

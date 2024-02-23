@@ -9,13 +9,13 @@ import (
 )
 
 func Test_application_routes(t *testing.T) {
-	var registered = []struct {
-		route  string
+	var registered = []struct{
+		route string
 		method string
 	}{
 		{"/", "GET"},
 		{"/login", "POST"},
-		{"/user/login", "GET"},
+		{"/user/profile", "GET"},
 		{"/static/*", "GET"},
 	}
 
@@ -24,14 +24,13 @@ func Test_application_routes(t *testing.T) {
 	chiRoutes := mux.(chi.Routes)
 
 	for _, route := range registered {
-		// check to see if the route exits
+		// check to see if the route exists
 		if !routeExists(route.route, route.method, chiRoutes) {
 			t.Errorf("route %s is not registered", route.route)
 		}
 	}
 }
 
-// get route retrieval
 func routeExists(testRoute, testMethod string, chiRoutes chi.Routes) bool {
 	found := false
 

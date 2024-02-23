@@ -10,11 +10,11 @@ import (
 )
 
 func Test_application_addIPToContext(t *testing.T) {
-	tests := []struct {
-		headerName  string
+	tests := []struct{
+		headerName string
 		headerValue string
-		addr        string
-		emptyAddr   bool
+		addr string
+		emptyAddr bool
 	}{
 		{"", "", "", false},
 		{"", "", "", true},
@@ -23,7 +23,7 @@ func Test_application_addIPToContext(t *testing.T) {
 	}
 
 	// create a dummy handler that we'll use to check the context
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
 		// make sure that the value exists in the context
 		val := r.Context().Value(contextUserKey)
 		if val == nil {
@@ -72,17 +72,17 @@ func Test_application_ipFromContext(t *testing.T) {
 
 	// perform the test
 	if !strings.EqualFold("whatever", ip) {
-		t.Errorf("wrong value returned from context")
+		t.Error("wrong value returned from context")
 	}
 }
 
-func Test_app_au(t *testing.T) {
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func Test_app_auth(t *testing.T) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
 
 	})
 
-	var tests = []struct {
-		name   string
+	var tests = []struct{
+		name string
 		isAuth bool
 	}{
 		{"logged in", true},
@@ -100,7 +100,7 @@ func Test_app_au(t *testing.T) {
 		handlerToTest.ServeHTTP(rr, req)
 
 		if e.isAuth && rr.Code != http.StatusOK {
-			t.Errorf("%s: expected status code fo 200 but got %d", e.name, rr.Code)
+			t.Errorf("%s: expected status code of 200 but got %d", e.name, rr.Code)
 		}
 
 		if !e.isAuth && rr.Code != http.StatusTemporaryRedirect {

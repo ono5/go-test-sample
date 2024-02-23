@@ -21,7 +21,7 @@ func (app *application) addIPToContext(next http.Handler) http.Handler {
 		// get the ip (as accurately as possible)
 		ip, err := getIP(r)
 		if err != nil {
-			ip, _, err = net.SplitHostPort(r.RemoteAddr)
+			ip, _, _ = net.SplitHostPort(r.RemoteAddr)
 			if len(ip) == 0 {
 				ip = "unknown"
 			}
@@ -41,7 +41,7 @@ func getIP(r *http.Request) (string, error) {
 
 	userIP := net.ParseIP(ip)
 	if userIP == nil {
-		return "", fmt.Errorf("userip] %q is not IP:port", r.RemoteAddr)
+		return "", fmt.Errorf("userip: %q is not IP:port", r.RemoteAddr)
 	}
 
 	forward := r.Header.Get("X-Forwarded-For")

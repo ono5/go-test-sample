@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +20,7 @@ func Test_application_handlers(t *testing.T) {
 		expectedFirstStatusCode int
 	}{
 		{"home", "/", http.StatusOK, "/", http.StatusOK},
-		{"404", "/hoge", http.StatusNotFound, "/hoge", http.StatusNotFound},
+		{"404", "/fish", http.StatusNotFound, "/fish", http.StatusNotFound},
 		{"profile", "/user/profile", http.StatusOK, "/", http.StatusTemporaryRedirect},
 	}
 
@@ -31,10 +30,16 @@ func Test_application_handlers(t *testing.T) {
 	ts := httptest.NewTLSServer(routes)
 	defer ts.Close()
 
+	// If we want to get the first status code, we have to create our
+	// own http client with a custom CheckRedirect function, and limit
+	// it ot the first response. For testing, we also need to
+	// specify a custom Transport field which accepts insecure
+	// https certificates. First create the custom transport.
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
+	// Then create the custom client.
 	client := &http.Client{
 		Transport: tr,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -58,6 +63,9 @@ func Test_application_handlers(t *testing.T) {
 			t.Errorf("%s: expected final url of %s but got %s", e.name, e.expectedURL, resp.Request.URL.Path)
 		}
 
+		// Call the test server using our custom  http client
+		// which does not follow redirects, and which has a custom
+		// transport.
 		resp2, _ := client.Get(ts.URL + e.url)
 		if resp2.StatusCode != e.expectedFirstStatusCode {
 			t.Errorf("%s: expected first returned status code to be %d but got %d", e.name, e.expectedFirstStatusCode, resp2.StatusCode)
@@ -94,11 +102,10 @@ func TestAppHome(t *testing.T) {
 
 		// check status code
 		if rr.Code != http.StatusOK {
-			t.Errorf("TestAppHome returend wrong status code; expected 200 but got %d", rr.Code)
+			t.Errorf("TestAppHome returned wrong status code; expected 200 but got %d", rr.Code)
 		}
 
 		body, _ := io.ReadAll(rr.Body)
-		fmt.Println(string(body))
 		if !strings.Contains(string(body), e.expectedHTML) {
 			t.Errorf("%s: did not find %s in response body", e.name, e.expectedHTML)
 		}
@@ -106,7 +113,7 @@ func TestAppHome(t *testing.T) {
 }
 
 func TestApp_renderWithBadTemplate(t *testing.T) {
-	// set templatepath to a location with a bad template
+	// set pathToTemplates to a location with a bad template
 	pathToTemplates = "./testdata/"
 
 	req, _ := http.NewRequest("GET", "/", nil)
@@ -151,7 +158,7 @@ func Test_app_Login(t *testing.T) {
 			expectedLoc:        "/user/profile",
 		},
 		{
-			name: "missing from data",
+			name: "missing form data",
 			postedData: url.Values{
 				"email":    {""},
 				"password": {""},
@@ -172,7 +179,7 @@ func Test_app_Login(t *testing.T) {
 			name: "bad credentials",
 			postedData: url.Values{
 				"email":    {"admin@example.com"},
-				"password": {"wrong secret"},
+				"password": {"password"},
 			},
 			expectedStatusCode: http.StatusSeeOther,
 			expectedLoc:        "/",
@@ -193,7 +200,6 @@ func Test_app_Login(t *testing.T) {
 
 		actualLoc, err := rr.Result().Location()
 		if err == nil {
-			// t.Log("location:", actualLoc.String())
 			if actualLoc.String() != e.expectedLoc {
 				t.Errorf("%s: expected location %s but got %s", e.name, e.expectedLoc, actualLoc.String())
 			}
